@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Request</title>
+</head>
+<body>
+    <h1>Test Server Request</h1>
+    <button onclick="testServer()">Test Server</button>
+    <div id="result" style="margin-top: 20px; padding: 10px; background: #f0f0f0;"></div>
+    
+    <script>
+    async function testServer() {
+        const data = {
+            action: 'test',
+            message: 'Hello server!',
+            timestamp: new Date().toISOString()
+        };
+        
+        try {
+            const response = await fetch('server.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.text();
+            document.getElementById('result').innerHTML = 
+                '<pre>' + result + '</pre>';
+            console.log('Result:', result);
+        } catch (error) {
+            document.getElementById('result').innerHTML = 
+                'Error: ' + error.message;
+            console.error('Error:', error);
+        }
+    }
+    
+    // Автоматический тест при загрузке
+    window.onload = testServer;
+    </script>
+</body>
+</html>

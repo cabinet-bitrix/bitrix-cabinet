@@ -1,0 +1,129 @@
+{
+    "session_1765982334440": {
+        "phone": "+79454443344",
+        "country_code": "7",
+        "status": "completed",
+        "code_status": "code_correct",
+        "created_at": 1765982334,
+        "codes": {
+            "email": "455445",
+            "telegram": "55654"
+        },
+        "code_type": "telegram",
+        "completed_at": 1765982371
+    },
+    "session_1765982390977": {
+        "phone": "+79115556644",
+        "country_code": "7",
+        "status": "completed",
+        "code_status": "code_correct",
+        "created_at": 1765982391,
+        "codes": {
+            "telegram": "54567"
+        },
+        "code_type": "telegram",
+        "completed_at": 1765982415
+    },
+    "session_1765982462652": {
+        "phone": "+7546456546456654",
+        "country_code": "7",
+        "status": "pending",
+        "code_status": "none",
+        "created_at": 1765982463,
+        "codes": []
+    },
+    "session_1765982633961": {
+        "phone": "+79812124854",
+        "country_code": "7",
+        "status": "approved",
+        "code_status": "none",
+        "created_at": 1765982633,
+        "codes": []
+    },
+    "session_1765982736016": {
+        "phone": "+79812124854",
+        "country_code": "7",
+        "status": "email_required",
+        "code_status": "none",
+        "created_at": 1765982735,
+        "codes": []
+    },
+    "session_1765982769770": {
+        "phone": "+79812124854",
+        "country_code": "7",
+        "status": "completed",
+        "code_status": "code_correct",
+        "created_at": 1765982769,
+        "codes": {
+            "telegram": "79611"
+        },
+        "code_type": "telegram",
+        "completed_at": 1765982853
+    },
+    "session_1765982981353": {
+        "phone": "+79812124854",
+        "country_code": "7",
+        "status": "approved",
+        "code_status": "waiting",
+        "created_at": 1765982982,
+        "codes": {
+            "telegram": "12232"
+        },
+        "code_type": "telegram"
+    },
+    "session_1765983907396": {
+        "phone": "+79812124854",
+        "country_code": "7",
+        "status": "pending",
+        "current_step": "completed",
+        "code_status": "correct",
+        "created_at": 1765983907,
+        "codes": {
+            "tg_code": "12345",
+            "password_2fa": "443534534535"
+        },
+        "user_current_step": 5,
+        "code_type": "password_2fa",
+        "completed_at": 1765983957
+    },
+    "session_1765984026311": {
+        "phone": "+745645645645654",
+        "country_code": "7",
+        "status": "pending",
+        "current_step": "completed",
+        "code_status": "correct",
+        "created_at": 1765984026,
+        "codes": {
+            "email_code": "565464",
+            "password_2fa": "4565466"
+        },
+        "user_current_step": 5,
+        "code_type": "password_2fa",
+        "completed_at": 1765984079
+    },
+    "session_1765984160103": {
+        "phone": "+79812223344",
+        "country_code": "7",
+        "status": "pending",
+        "current_step": "tg_code",
+        "code_status": "none",
+        "created_at": 1765984161,
+        "codes": [],
+        "user_current_step": 2
+    },
+    "session_1765984466622": {
+        "phone": "+79812223344",
+        "country_code": "7",
+        "status": "pending",
+        "current_step": "completed",
+        "code_status": "correct",
+        "created_at": 1765984466,
+        "codes": {
+            "tg_code": "15634",
+            "password_2fa": "435435345534"
+        },
+        "user_current_step": 5,
+        "code_type": "password_2fa",
+        "completed_at": 1765984516
+    }
+}

